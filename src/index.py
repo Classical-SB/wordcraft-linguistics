@@ -5,7 +5,7 @@ import en_core_web_sm
 import json
 import spacy
 
-from mine_properties import mine_properties
+from mine_properties import mine_json_doc
 from data.index import COPULAS
 
 nlp = en_core_web_sm.load()
@@ -21,7 +21,7 @@ def upload_images():
         return jsonify(error="q parameter required")
 
     json_doc = nlp((query)).to_json()
-    predictions = mine_properties(json_doc, COPULAS)
+    predictions = mine_json_doc(json_doc, COPULAS)
     return jsonify(query=query, predictions=predictions)
 
 
