@@ -1,5 +1,4 @@
-from data.index import VERB_TAGS
-
+from data.index import VALID_PREDICATE_K_V_PAIRS, VERB_TAGS
 
 def first_or_none(lst):
     return None if len(lst) == 0 else lst[0]
@@ -31,13 +30,13 @@ def find_token_by_attr(tokens, attr, value):
     return first_or_none(results)
 
 
-def filter_token_by_attr(tokens, attr, value):
+def filter_tokens_by_attr(tokens, attr, value):
     return [t for t in tokens if t[attr] != value]
 
 
-def filter_token_by_attrs(tokens, k_v_pairs):
+def filter_tokens_by_attrs(tokens, k_v_pairs):
     for key, value in k_v_pairs:
-        tokens = filter_token_by_attr(tokens, key, value)
+        tokens = filter_tokens_by_attr(tokens, key, value)
     return tokens
 
 
@@ -52,6 +51,17 @@ def get_verbs(json_doc, only=None):
     return results
 
 
+def select_tokens_by_attr(tokens, attr, value):
+    return [t for t in tokens if t[attr] == value]
+
+
+def select_tokens_by_attrs(tokens, k_v_pairs):
+    result = []
+    for key, value in k_v_pairs:
+        result += select_tokens_by_attr(tokens, key, value)
+    return result
+
+
 def sorted_values(tokens, json_doc):
     return [value_for_token(t, json_doc) for t in sorted(tokens, key=lambda w: w["id"])]
 
@@ -59,32 +69,40 @@ def sorted_values(tokens, json_doc):
 def value_for_token(token, json_doc):
     return json_doc["text"][token["start"]:token["end"]].lower()
 
-
-def mine_properties(json_doc, verbs):
+# point of entry
+def mine_json_doc(json_doc, verbs):
     results = []
-
+    
     for verb in get_verbs(json_doc, verbs):
         children = children_for(json_doc, verb["id"])
-        subject = find_token_by_attr(children, "dep", "nsubj")
-        other = filter_token_by_attrs(children, [("dep", "nsubj"), ("pos", "PUNCT")])
-
+        print(f"parsing verb {value_for_token(verb, json_doc)}...")
+        subject = find_token_by_attr(children, "dep", "nsubj")     
+        print(f"\n\tsubject is: {value_for_token(subject, json_doc)}")
+        predicates = select_tokens_by_attrs(children, VALID_PREDICATE_K_V_PAIRS)
+        
         if subject is None:
             continue
-
+                    
         subject_deps = children_for(json_doc, subject["id"])
-        subject_deps = filter_token_by_attrs(subject_deps, [("pos", "DET"), ("pos", "PUNCT")])
+        subject_deps = filter_tokens_by_attrs(subject_deps, [("pos", "DET"),("pos", "PUNCT")])
+        print(f"\t\tdependencies are: {', '.join([value_for_token(o, json_doc) for o in subject_deps])}")
         word = [subject] + subject_deps
-
+        
         properties = []
-
-        for o in other:
-            properties.append(o)
+        
+        print(f"\n\tpredicates are: {', '.join([value_for_token(o, json_doc) for o in predicates])}")
+        
+        for o in predicates:
+            print(f"\n\tparsing predicate {value_for_token(o, json_doc)}...")
+            properties.append(o)            
             other_deps = children_for(json_doc, o["id"], True)
-            properties += filter_token_by_attrs(other_deps, [("pos", "DET")])
-
+            filtered = filter_tokens_by_attrs(other_deps, [("pos", "DET")])
+            print(f"\t\tdependencies are: {', '.join([value_for_token(o, json_doc) for o in filtered])}")
+            properties += filtered
+            
         word = sorted_values(word, json_doc)
         properties = sorted_values(properties, json_doc)
-
+            
         results.append((" ".join(word), " ".join(properties)))
-
+        
     return results
