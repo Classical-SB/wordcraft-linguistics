@@ -24,10 +24,21 @@ The app is deployed on an Amazon EC2 instance. To make changes and deploy the ap
 
 3.  Make any changes.
 
-4.  Rebuild the container.
+4.  Attach to running [screen](https://www.gnu.org/software/screen/):
+
+        % screen -ls
+        % ...
+        % ...
+        % screen -r <SCREEN_ID>
+
+5.  Rebuild the container.
 
         % docker build -t wl .
 
-5.  Run the container.
+6.  Run the container.
 
         % docker run -p 80:80 wl
+
+7.  Exit screen without hangup.
+
+        % ctrl + a + d

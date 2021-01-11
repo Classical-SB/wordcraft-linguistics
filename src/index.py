@@ -14,15 +14,21 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route("/mine-properties", methods=['GET'])
+@app.route("/mine-properties", methods=['POST'])
 def upload_images():
-    query = request.args.get('q')
-    if not query:
-        return jsonify(error="q parameter required")
+    if not request.json:
+        return jsonify(error="json array required")
 
-    json_doc = nlp((query)).to_json()
-    predictions = mine_json_doc(json_doc, COPULAS)
-    return jsonify(query=query, predictions=predictions)
+    result = []
+
+    for passage in request.json:
+        predictions = [
+            [sentence, mine_json_doc(nlp((sentence)).to_json(), COPULAS)] for sentence in passage
+        ]
+        propositions_found = any([len(p[1]) > 0 for p in predictions])
+        result.append({"predictions": predictions, "propositions_found": propositions_found})
+
+    return jsonify(result)
 
 
 if __name__ == "__main__":
