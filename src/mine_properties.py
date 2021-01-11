@@ -100,6 +100,8 @@ def mine_json_doc(json_doc, verbs):
 
             word = sorted_values(word, json_doc)
             properties = sorted_values(properties, json_doc)
+            if len(properties) == 0:
+                continue
 
             results.append((" ".join(word), " ".join(properties)))
 

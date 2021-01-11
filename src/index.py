@@ -22,11 +22,11 @@ def upload_images():
     result = []
 
     for passage in request.json:
-        predictions = [
-            [sentence, mine_json_doc(nlp((sentence)).to_json(), COPULAS)] for sentence in passage
+        requires_tokenization = isinstance(passage, str)
+        sentences = [s.text for s in list(nlp(passage).sents)] if requires_tokenization else passage
+        result += [
+            mine_json_doc(nlp((sentence)).to_json(), COPULAS) for sentence in sentences
         ]
-        propositions_found = any([len(p[1]) > 0 for p in predictions])
-        result.append({"predictions": predictions, "propositions_found": propositions_found})
 
     return jsonify(result)
 
