@@ -67,8 +67,8 @@ def select_tokens_by_attrs(tokens, k_v_pairs):
     return result
 
 
-def sorted_values(tokens, json_doc):
-    return [value_for_token(t, json_doc) for t in sorted(tokens, key=lambda w: w["id"])]
+def sorted_values(tokens):
+    return [t for t in sorted(tokens, key=lambda w: w["id"])]
 
 
 def value_for_token(token, json_doc):
@@ -89,6 +89,7 @@ def mine_json_doc(json_doc, verbs):
                 continue
 
             LOG(f"\n\tsubject is: {value_for_token(subject, json_doc)}")
+            LOG(subject)
             predicates = select_tokens_by_attrs(children, VALID_PREDICATE_K_V_PAIRS)
             subject_deps = children_for(json_doc, subject["id"])
             subject_deps = filter_tokens_by_attrs(subject_deps, [("pos", "DET"), ("pos", "PUNCT")])
@@ -105,12 +106,17 @@ def mine_json_doc(json_doc, verbs):
                 LOG(f"\t\tdependencies are: {', '.join([value_for_token(o, json_doc) for o in filtered])}")
                 properties += filtered
 
-            word = sorted_values(word, json_doc)
-            properties = sorted_values(properties, json_doc)
+            word = sorted_values(word)
+            properties = sorted_values(properties)
             if len(properties) == 0:
                 continue
 
-            results.append((" ".join(word), " ".join(properties)))
+            joined = (
+                " ".join([value_for_token(t,json_doc) for t in word]),
+                " ".join([value_for_token(t,json_doc) for t in properties])
+            )
+
+            results.append({"subject":word, "properties":properties,"joined":joined})
 
         return results
     except Exception as error:
